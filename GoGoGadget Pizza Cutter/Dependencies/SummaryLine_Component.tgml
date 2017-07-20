@@ -1,0 +1,508 @@
+<?xml version="1.0"?>
+
+<!--[DocumentInformation]
+Created: 2017-05-23 11:01
+Modified: 2017-06-01 09:21
+-->
+<?tgml version="1.3"?><Tgml ComponentCounter="3" GridSize="10">
+    <Component Clip="False" ContentHeight="27.5" ContentWidth="575.0"
+        Height="27.5" Id="SummaryLine" Left="0.0" Top="0.0"
+        Type="SummaryLine" Width="575.0" hlGroup="">
+        <Expose ExposedAttribute="Type" Name="Type"/>
+        <Expose ExposedAttribute="Name" Name="hlGroup"/>
+        <Expose ExposedAttribute="hlGroup" Name="hlGroup"/>
+        <Group Id="TempTile" Name="BindGroup">
+            <Link Name="Link" PreventDefault="True"/>
+            <Script OnMouseClick="ttClick" OnSignalChange="signal"><![CDATA[function ttClick(evt)
+{
+evt.preventDefault();
+var targ = evt.getCurrentTarget();
+var pressedButton = evt.getButton();
+ttClick(pressedButton,targ);
+
+}
+function signal(evt)
+{
+var bg = evt.getCurrentTarget().getParentNode().getChild("BindGroup");
+var stsInd = bg.getChild("StatusIndicator");
+//var alarm  = bg.getChild("Alarm");
+//var genAlm = Number(bg.getAttribute("genAlm"));
+var controllerStatus = bg.getChild("ControllerStatus").getFullBindName();
+var sts = evt.getStatus();
+var sig = evt.getTarget().getFullBindName();
+
+if (sig == controllerStatus){
+    switch(sts){
+        case 0:
+            stsInd.setAttribute("Fill", "#BB2222");
+            stsInd.setAttribute("Opacity", "1"); 
+            break;
+        case 1:
+            stsInd.setAttribute("Fill", "#BB2222"); 
+            stsInd.setAttribute("Opacity", "1");        
+            break;
+        case 2:
+            stsInd.setAttribute("Fill", "#01ffffff");
+            stsInd.setAttribute("Opacity", "0.01");        
+            break;
+        case 3:
+            stsInd.setAttribute("Fill", "#BB2222");
+            stsInd.setAttribute("Opacity", "1");         
+            break; 
+}
+
+}
+
+//if(genAlm){alarm.setAttribute("Visibility", "Visible"); }
+//else{alarm.setAttribute("Visibility", "Hidden"); }
+
+}]]></Script>
+            <Rectangle Fill="#01FFFFFF" Height="27.5" Id="" Left="0.0"
+                Name="StatusIndicator" Opacity="0.01" RadiusX="0.0"
+                RadiusY="0.0" Stroke="None" StrokeDashArray="0.0"
+                StrokeWidth="2" Top="0.0" Width="575.0"/>
+            <Component Clip="False" ContentHeight="10.0"
+                ContentWidth="13.0" Height="15.5" Id="OVR" Left="525.8"
+                Top="5.5" Width="23.200000000000045">
+                <Group Name="binds">
+                    <Bind Description="ValueBind" Name="RmTmp.Value" PreventDefault="True">
+                        <Expose ExposedAttribute="Name" Name="TmpBind"/>
+                    </Bind>
+                    <Bind Alarm="" Bgd="" Description="AlarmBind"
+                        DynamicUpdates="Enable" Name="ZnAlm.Value" PreventDefault="True">
+                        <Expose ExposedAttribute="Name" Name="AlarmBind"/>
+                    </Bind>
+                </Group>
+                <Group Name="display">
+                    <Component Clip="False" ContentHeight="10.01"
+                        ContentWidth="13.0" Height="10.01" Left="12.5"
+                        Name="Point" Top="0.0" Width="13.0">
+                        <Group Name="display">
+                            <Component Clip="False" ContentHeight="10"
+                                ContentWidth="15" Height="7.5" Left="2"
+                                Name="AlarmImage" Top="0"
+                                Visibility="Hidden" Width="10">
+                                <Curve Fill="#FFFFFF" Opacity="1.0"
+                                    Points="-0.001638046087464,11.979982855147682 0.329774324504115,11.713356001666114 0.992599065687386,11.180102294703033 1.286940030899132,10.632835287397029 2.078883883112553,9.16037717527729 2.292118041374579,7.109286392852312 2.621927714892081,5.432035345496843 2.971890021439606,4.272587213236591 3.208509686828393,3.093774174130658 3.961141174091608,2.14491199668555 4.363269502930393,1.637938307474371 4.864265302379181,1.575600513615314 5.444577178946929,1.170437556676916 5.891352170052187,0.617848120411679 5.874552498700837,0.000981901946204 6.441248232164071,0.002070258939057 6.966582219393899,0.003079179396423 7.060145410928442,0.413574025614253 7.495540132731548,1.173505247716093 8.133086683337694,1.719450006962347 8.812595844177793,1.821634513107028 9.313177873555105,2.495384404537617 10.532751357926259,4.136848649086744 10.758406869587986,6.473546440229256 11.331989618309308,8.436393143434543 11.488829359576414,8.973111463091072 11.666378550375157,9.634574297063011 11.90966828376986,10.138037666853052 12.232580221414764,10.806271093737507 13.449313673938605,11.240532598687935 13.107320326889749,11.899204431130784 10.185224042117625,11.903787487623049 8.216701226931946,11.94897231698559 5.90089108767279,11.960845719615463 5.496221715850084,12.566087163905308 4.982095872775062,13.257701789253531 4.245762944978196,13.264544597681379 3.507748868864439,13.271403029172404 2.791955862182931,12.568755127243605 2.634087598649785,11.862835660256678"
+                                    Stroke="#FF0000"
+                                    StrokeDashArray="0.0" StrokeWidth="1.5"/>
+                            </Component>
+                            <Component Clip="False"
+                                ContentHeight="10.01"
+                                ContentWidth="13.0"
+                                Height="10.009999999999998" Left="0"
+                                Name="ForcedImage" Top="0"
+                                Visibility="Hidden" Width="13.0">
+                                <Path Fill="#FFD100" Opacity="1"
+                                    PathData="M12.999869,3.16273863 L8.0813035,1.4053043 6.85126021,0.176065103 6.14860811,0.0 5.44595601,0.7026522 5.621217,1.4053043 6.85126021,2.6353475 0.526587131,2.6353475 0.0,3.16273863 0.0,3.8645868 0.526587131,4.3919778 5.621217,4.3919778 3.1619347,4.3919778 3.1619347,5.622021 3.68932568,6.3246731 5.621217,6.3246731 3.68932568,6.3246731 3.68932568,7.5539126 4.2159128,8.0813038 6.3246731,8.0813038 4.2159128,8.0813038 4.2159128,8.78395583 5.621217,10.013999 9.311347,10.013999 11.419303,9.31134703 12.999869,8.78395583 z"
+                                    Stroke="#808080" StrokeWidth="0.5">
+                                    <Expose ExposedAttribute="Stroke" Name="OvrPath"/>
+                                    <Expose ExposedAttribute="Fill" Name="OvrFill"/>
+                                </Path>
+                            </Component>
+                        </Group>
+                    </Component>
+                </Group>
+                <Script OnDocumentLoad="onLoad" OnMouseClick="" OnSignalChange="onChange"><![CDATA[var comp;
+var myValue = new valueObject;
+
+function onLoad(evt){
+	comp = evt.getCurrentTarget();
+	myValue.init();	
+}
+
+function onChange(evt){
+	var val = evt.getValue();
+	var sts = parseInt(evt.getStatus());
+	var fbn = evt.getTarget().getFullBindName();	
+	myValue.changeValue(val,fbn,sts);
+}
+
+function valueObject(){
+	var node;
+	var valueBind;
+	var alarmBind;
+	var forced = false;
+	var value = false;
+	var alarm = false;
+	var txt;
+	var units;
+	var decs;
+	var alarmColor;
+	var forcedColor;
+	var forcedImage;
+	var alarmImage;
+	var bg;
+	var normalColor;
+	
+	this.init = function(){
+		node = comp;
+		
+		//get binds
+		var bindGroup = node.getChildByName("binds");		
+		if(bindGroup != null){
+			var bindList = bindGroup.getElementsByTagName("Bind");
+			for(var i=0;i<bindList.length;i++){
+				if(bindList.item(i).getAttribute("Description") == "ValueBind"){
+					valueBind = bindList.item(i).getFullBindName();
+				}
+				if(bindList.item(i).getAttribute("Description") == "AlarmBind"){
+					alarmBind = bindList.item(i).getFullBindName();
+				}
+			}
+		}
+		
+		//get display objects
+		var displayGroup = node.getChildByName("display");
+		if(displayGroup != null){
+			var point = displayGroup.getChildByName("Point");
+			if(point != null){
+				units = point.getAttribute("Units");
+				decs = point.getAttribute("Decimals");
+				alarmColor = point.getAttribute("AlarmColor");
+				forcedColor = point.getAttribute("ForcedColor");
+				var display = point.getChildByName("display");			
+				if(display != null){
+					txt = display.getChildByName("foreground");			
+					forcedImage = display.getChildByName("ForcedImage");
+					alarmImage = display.getChildByName("AlarmImage");
+					bg = display.getChildByName("background");
+					if(bg != null){
+						normalColor = point.getAttribute("Stroke");
+					}
+				}
+			}
+		}		
+	}
+	
+	this.changeValue = function(val,fbn,sts){
+		if(fbn === valueBind){
+			value = parseFloat(val);
+			
+			if(sts === 3){
+				forced = true;
+			}else{
+				forced = false;
+			}
+		}
+		
+		if(fbn === alarmBind){	
+			alarm = getBool(val);			
+		}
+		
+		renderPoint();		
+	}
+	
+	var renderPoint = function(){
+		if(txt != null){
+			txt.setAttribute("Content",getDisplayText());
+		}
+		
+		if(forcedImage != null){
+			forcedImage.setAttribute("Visibility",getForced());
+		}
+		
+		if(alarmImage != null){
+			alarmImage.setAttribute("Visibility",getAlarm());
+		}
+		
+		if(bg != null){
+			bg.setAttribute("Stroke", getBgStroke());
+			bg.setAttribute("StrokeWidth", getBgStrokeWidth());
+		}
+	}
+	
+	var getDisplayText = function(){
+		try{		
+			var str = "...";
+			if(!isNaN(value) && value != Infinity){
+				str = new Number(value).toFixed(decs);
+				str += " " + units;
+			}
+			return str;
+		}catch(ex){
+			return "...";
+		}
+	}
+	
+	var getForced = function(){
+		if(forced){
+			return "Visible";
+		}
+		return "Hidden";
+	}
+	
+	var getAlarm = function(){
+		if(alarm && !forced){
+			return "Visible";
+		}
+		return "Hidden";
+	}
+	
+	var getBgStroke = function(){
+		if(forced){
+			return forcedColor;
+		}
+		if(alarm){
+			return alarmColor;
+		}
+		return "#636469";
+	}
+	
+	var getBgStrokeWidth = function(){
+		if(alarm || forced){
+			return "2";
+		}
+		return "1";
+	}
+	
+	var getBool = function(val){
+		if(val == "1" || val == "true" || val === 1 || val === true){
+			return true;
+		}
+		return false;		
+	}
+}]]></Script>
+            </Component>
+            <Bind Attribute="controllerStatus" Name="ControllerStatus">
+                <ConvertStatus/>
+            </Bind>
+        </Group>
+        <Rectangle Fill="#01FFFFFF" Height="27.5" Id="" Left="0.0"
+            Name="Highlight" Opacity="0.01" RadiusX="0.0" RadiusY="0.0"
+            Stroke="#000000" StrokeDashArray="0.0" StrokeWidth="2"
+            Top="0.0" Width="575.0">
+            <Expose ExposedAttribute="Stroke" Name="Highlight Stroke"/>
+        </Rectangle>
+        <Text FontFamily="Georgia" FontSize="18" FontStyle="Normal"
+            FontWeight="Normal" HorizontalAlign="Left" Id="Title"
+            Left="13.0" Name="" Opacity="1.0" Stroke="#000000"
+            TextDecoration="None" Top="3.523914142476599" VerticalAlign="Top">
+            <Expose ExposedAttribute="Name" Name="hlGroup"/>
+            <Expose ExposedAttribute="Content" Name="hlGroup"/>
+            <Expose ExposedAttribute="Stroke" Name="FontColor"/>
+            <Expose ExposedAttribute="Content" Name="Line Name"/>
+        </Text>
+        <Text Decimals="1" FontFamily="Georgia" FontSize="18"
+            FontStyle="Normal" FontWeight="Normal"
+            HorizontalAlign="Center" Id="HtgSpt" Label="" Left="300.0"
+            Opacity="1.0" Stroke="#000000" TextDecoration="None"
+            Top="13.750008416175831" Unit="" VerticalAlign="Middle">
+            <Bind Attribute="Content" Format="Presentation" Name="RmEffHtgSpt.Value">
+                <Expose ExposedAttribute="Name" Name="HtgSptBind"/>
+                <Script OnDocumentLoad="load" OnSignalChange="signal"><![CDATA[var units;
+
+function load(evt)
+{
+  txt = evt.getTarget().getParentNode();
+  output = txt.getAttribute("Label");
+  units = txt.getAttribute("Unit")
+  if(output != "")
+    output += " ";
+  output += "-- ";
+  txt.setAttribute("Content", output);
+}
+
+function signal(evt)
+{
+  txt = evt.getTarget().getParentNode();
+  
+  output = "";
+  
+  label = txt.getAttribute("Label");
+  if(label != "")
+    output = label + " ";
+  
+  decimals = parseInt(txt.getAttribute("Decimals"));
+  if(decimals > 6) decimals = 6;
+  if(decimals < 0) decimals = 0;
+ 
+  value = new Number(evt.getValue());
+  
+  switch(evt.getStatus())
+  {
+    case 0: // Bad quality
+      output += "--";
+      txt.setAttribute("TextDecoration", "None");
+      break;
+    case 1: // Stored value, uncertain quality
+      output += value.toFixed(decimals);
+      txt.setAttribute("TextDecoration", "None");
+      break;
+    default: // Good quality
+      output += value.toFixed(decimals);
+      txt.setAttribute("TextDecoration", "None");
+      break;
+  }
+  
+    units = evt.getUnit();
+    valueBindValue = parseFloat(evt.getValue()).toFixed(decimals);
+    if(units == "" || units == null){
+        txt.setAttribute("Content", valueBindValue);
+    } else {
+        txt.setAttribute("Content", valueBindValue + " " + units);
+    }
+
+}]]></Script>
+            </Bind>
+            <Expose ExposedAttribute="Label" Name="Label 1"/>
+            <Expose ExposedAttribute="Decimals" Name="Decimals"/>
+            <Expose ExposedAttribute="Unit" Name="Unit"/>
+            <Expose ExposedAttribute="Content" Name="EditModeText"/>
+            <Expose ExposedAttribute="Stroke" Name="FontColor"/>X.X</Text>
+        <Text Decimals="1" FontFamily="Georgia" FontSize="18"
+            FontStyle="Normal" FontWeight="Normal"
+            HorizontalAlign="Center" Id="ClgSpt" Label="" Left="402.5"
+            Opacity="1.0" Stroke="#000000" TextDecoration="None"
+            Top="13.750010800361622" Unit="" VerticalAlign="Middle">
+            <Bind Attribute="Content" Format="Presentation" Name="RmEffClgSpt.Value">
+                <Expose ExposedAttribute="Name" Name="ClgSptBind"/>
+                <Script OnDocumentLoad="load" OnSignalChange="signal"><![CDATA[var units;
+
+function load(evt)
+{
+  txt = evt.getTarget().getParentNode();
+  output = txt.getAttribute("Label");
+  units = txt.getAttribute("Unit")
+  if(output != "")
+    output += " ";
+  output += "-- ";
+  txt.setAttribute("Content", output);
+}
+
+function signal(evt)
+{
+  txt = evt.getTarget().getParentNode();
+  
+  output = "";
+  
+  label = txt.getAttribute("Label");
+  if(label != "")
+    output = label + " ";
+  
+  decimals = parseInt(txt.getAttribute("Decimals"));
+  if(decimals > 6) decimals = 6;
+  if(decimals < 0) decimals = 0;
+ 
+  value = new Number(evt.getValue());
+  
+  switch(evt.getStatus())
+  {
+    case 0: // Bad quality
+      output += "--";
+      txt.setAttribute("TextDecoration", "None");
+      break;
+    case 1: // Stored value, uncertain quality
+      output += value.toFixed(decimals);
+      txt.setAttribute("TextDecoration", "None");
+      break;
+    default: // Good quality
+      output += value.toFixed(decimals);
+      txt.setAttribute("TextDecoration", "None");
+      break;
+  }
+  
+    units = evt.getUnit();
+    valueBindValue = parseFloat(evt.getValue()).toFixed(decimals);
+    if(units == "" || units == null){
+        txt.setAttribute("Content", valueBindValue);
+    } else {
+        txt.setAttribute("Content", valueBindValue + " " + units);
+    }
+
+}]]></Script>
+            </Bind>
+            <Expose ExposedAttribute="Label" Name="Label 2"/>
+            <Expose ExposedAttribute="Decimals" Name="Decimals"/>
+            <Expose ExposedAttribute="Unit" Name="Unit"/>
+            <Expose ExposedAttribute="Content" Name="EditModeText"/>
+            <Expose ExposedAttribute="Stroke" Name="FontColor"/>X.X</Text>
+        <Text Decimals="1" FontFamily="Georgia" FontSize="18"
+            FontStyle="Normal" FontWeight="Normal"
+            HorizontalAlign="Center" Id="RmTmp" Label="" Left="505.0"
+            Opacity="1.0" Stroke="#000000" TextDecoration="None"
+            Top="13.750007030717086" Unit="" VerticalAlign="Middle">
+            <Bind Attribute="Content" Format="Presentation" Name="RmTmp.Value">
+                <Expose ExposedAttribute="Name" Name="TmpBind"/>
+                <Script OnDocumentLoad="load" OnSignalChange="signal"><![CDATA[var units;
+
+function load(evt)
+{
+  txt = evt.getTarget().getParentNode();
+  output = txt.getAttribute("Label");
+  units = txt.getAttribute("Unit")
+  if(output != "")
+    output += " ";
+  output += "-- ";
+  txt.setAttribute("Content", output);
+}
+
+function signal(evt)
+{
+  txt = evt.getTarget().getParentNode();
+  
+  output = "";
+  
+  label = txt.getAttribute("Label");
+  if(label != "")
+    output = label + " ";
+  
+  decimals = parseInt(txt.getAttribute("Decimals"));
+  if(decimals > 6) decimals = 6;
+  if(decimals < 0) decimals = 0;
+ 
+  value = new Number(evt.getValue());
+  
+  switch(evt.getStatus())
+  {
+    case 0: // Bad quality
+      output += "--";
+      txt.setAttribute("TextDecoration", "None");
+      break;
+    case 1: // Stored value, uncertain quality
+      output += value.toFixed(decimals);
+      txt.setAttribute("TextDecoration", "None");
+      break;
+    default: // Good quality
+      output += value.toFixed(decimals);
+      txt.setAttribute("TextDecoration", "None");
+      break;
+  }
+  
+    units = evt.getUnit();
+    valueBindValue = parseFloat(evt.getValue()).toFixed(decimals);
+    if(units == "" || units == null){
+        txt.setAttribute("Content", valueBindValue);
+    } else {
+        txt.setAttribute("Content", valueBindValue + " " + units);
+    }
+
+}]]></Script>
+            </Bind>
+            <Expose ExposedAttribute="Label" Name="Label 3"/>
+            <Expose ExposedAttribute="Decimals" Name="Decimals"/>
+            <Expose ExposedAttribute="Unit" Name="Unit"/>
+            <Expose ExposedAttribute="Content" Name="EditModeText"/>
+            <Expose ExposedAttribute="Stroke" Name="FontColor"/>X.X</Text>
+        <Script Name="clickCall" OnMouseClick="click"><![CDATA[function click(evt)
+{
+try{evt.preventDefault();
+var targ = evt.getCurrentTarget();
+var pressedButton = evt.getButton();
+ttClick(pressedButton,targ);
+}
+catch(e){
+    console.log("Global Function Not Available.")
+    var targ = evt.getCurrentTarget();
+    var bindGroup = targ.getChild("BindGroup");
+    var link = bindGroup.getElementsByTagName("Link").item([0]);
+    invoke(link, "OpenInNewWindow");
+
+}
+}]]></Script>
+        <Rectangle Fill="#01FFFFFF" Height="27.5" Id="" Left="0.0"
+            Name="TargetArea" Opacity="0.01" RadiusX="0.0" RadiusY="0.0"
+            Stroke="#01FFFFFF" StrokeDashArray="0.0" StrokeWidth="2"
+            Top="0.0" Width="575.0"/>
+    </Component>
+</Tgml>

@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+
+<!--[DocumentInformation]
+Created: 2017-06-01 09:34
+Modified: 2017-06-01 09:34
+-->
+<?tgml version="1.3"?><Tgml GridSize="10">
+    <Rectangle Fill="#01FFFFFF" Height="0" Left="0" Name="OverBlock"
+        Opacity=".01" RadiusX="0.0" RadiusY="0.0" Stroke="None"
+        StrokeDashArray="0.0" StrokeWidth="1.0" Top="0" Width="0"/>
+</Tgml>

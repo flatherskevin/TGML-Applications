@@ -1,0 +1,1081 @@
+<Tgml GridSize="10">
+<Script Id="" Name="TempTileGlobal" OnDocumentLoad="load" OnSignalChange="signal"><![CDATA[/*
+** Author: Dominic Lopriore
+** Revision: 2.0a
+** Version Notes: Revised Click actions, Tested Summary Lines, Implemented Label Placing Algorithm
+**
+**                  *This is a global script and requires that the 
+**                      feature is enabled on the tgml layer*
+** Date: 5/15/17
+**
+*/
+
+
+var defaultClick;
+var doc;
+var loadValues
+var hoverColor;
+var outOpacity;        // for a typical higlight
+var overOpacity;
+var ttOutOpacity;       // for a tempTile
+var ttOverOpacity;
+var defaultTTColor;
+var wentover;
+var list;
+var frontTTListPos = 0; //used to track maximum DOM position
+var roomColoring, heatingSpan, coolingSpan, heatingDbDef, coolingDbDef, tempTileStatus,TmpUnrThr, labelPop,bringToFront; //Coloring Parameters and Defaults
+var showRmAlms;
+
+function signal(evt){
+    tempTileStatus = (loadValues.getAttribute("tempTileStatus") === undefined || loadValues.getAttribute("tempTileStatus") == "")? false: loadValues.getAttribute("tempTileStatus");
+}
+
+
+function load(evt)
+{
+
+
+
+
+/*
+** Document parameters and default values for some functions are pulled in on load. Some parameters are defined externally, 
+** and measures have been taken to prevent code errors if a user does not set up the document properly.
+*/
+doc = evt.getCurrentTarget()
+loadValues = doc.getChildByName("LoadValues");
+defaultClick = loadValues.getAttribute("DefaultClickAction");
+
+
+/*
+** This function checks to see if there is an entered value for an attribute and sets it to the default if it is not entered
+** 
+** Input(s): 
+**      obj             - The object that has the attribute being tested
+**      attribute       - The attribute of the object to test for
+**      defaultValue    - The default value to fall back on if the attribute is not defined
+**
+** Output(s):
+**      None
+**
+** Returns:
+**      attribute       - The attribute that the function was called with after checking to see if a default value was necessary
+**
+*/
+
+setDefault = function(obj,attribute,defaultValue){
+    return  (obj.getAttribute(attribute) === undefined ||
+            obj.getAttribute(attribute) == "" ||
+            obj.getAttribute(attribute) == null)
+            ? defaultValue: obj.getAttribute(attribute);
+}
+
+
+
+/*
+**Configure the Load values
+*/
+roomColoring    = setDefault(loadValues,"RoomColoring",1);
+tempTileStatus  = setDefault(loadValues,"tempTileStatus",false);
+hoverColor      = setDefault(loadValues,"hoverColor","#0080FF");
+outOpacity      = setDefault(loadValues,"outOpacity","0.01");
+overOpacity     = setDefault(loadValues,"overOpacity","0.3");
+ttOutOpacity    = setDefault(loadValues,"ttOutOpacity","0.6");
+ttOverOpacity   = setDefault(loadValues,"ttOverOpacity","1.0");
+heatingSpan     = setDefault(loadValues,"heatingSpan",10);
+coolingSpan     = setDefault(loadValues,"coolingSpan",10);
+heatingDbDef    = setDefault(loadValues,"heatingDbDef",1);
+coolingDbDef    = setDefault(loadValues,"coolingDbDef",1);
+showRmAlms      = setDefault(loadValues,"showRmAlms","1");
+TmpUnrThr       = setDefault(loadValues,"TmpUnrThr",200);
+labelPop        = Number(setDefault(loadValues,"labelPop",0));
+defaultTTColor  = setDefault(loadValues,"DefaultTTColor","#C0C0C0");
+bringToFront    = Number(setDefault(loadValues,"BringToFront",0));
+
+
+
+/*
+** This function converts one range to another and ensures that the value
+** falls within the desired output range. This function is used strictly for
+** the tempTile coloring process and is not suitable for most range conversions.
+** Input(s): 
+**      value       - The value you wish to scale
+**      oldMin      - The minimum of the old scale
+**      oldMax      - The maximum of the old scale
+**      newMin      - The minimum of the new scale
+**      newMax      - The maximum of the new scale
+**
+** Output(s):
+**      outValue    - The scaled output; a whole number between newMin and newMax.
+** 
+** Returns:
+**      None
+**
+*/
+
+convertRange = function(value, oldMin, oldMax, newMin, newMax){
+			 var oldRange = oldMax - oldMin; 
+			 var newRange = newMax - newMin;
+			 var newValue = (((value - oldMin) * (newRange)) / (oldRange)) + newMin;
+		 
+			/* Make sure the color code is within the desired range and a whole number*/
+			 var outValue = Math.round(Math.min(Math.max(newMin, newValue), newMax));	
+			 return outValue;
+		 }
+
+/*
+** This function pads a sting to have at least 2 characters
+*/	
+	 
+pad = function(s){
+        	while (s.length < 2) {s = "0" + s;}
+      		return s;
+}
+
+/*
+** This function takes in the target component and looks for the binds within
+** it that can be used to determin the coloring of a thermal floor plan. 
+** 
+** Input(s): 
+**      tempTile       - The component that holds the binds pertinent to the building the color string
+**
+** Output(s):
+**      None
+**
+** Returns:
+**      A color string - A seven character hexadecimal string beginning with '#' representing a color code
+*/
+
+getColor = function(tempTile){
+        RmTmp = new Number(tempTile.getAttribute("RmTmp"));                         // The measured temperature of the room
+        RmEffHtgSpt = new Number(tempTile.getAttribute("RmEffHtgSpt"));             // The heating setpoint the system is actually controlling to
+        RmEffClgSpt = new Number(tempTile.getAttribute("RmEffClgSpt"));             // The cooling setpoint the system is actually controlling to
+        HeatingDB  = new Number(setDefault(tempTile,"HeatingDB",heatingDbDef));     // The distance below the heating setpoint that is considered normal
+        CoolingDB  = new Number(setDefault(tempTile,"CoolingDB",coolingDbDef));     // The distance above the cooling setpoint that is considered normal
+                
+        var lowTempBound = RmEffHtgSpt - HeatingDB - heatingSpan;                   //Defines the lower bound on the temperature gradient. Anything below this will be true blue
+        var highTempBound = RmEffClgSpt + CoolingDB + coolingSpan;                  //Defines the upper bound on the temperature gradient. Anything above this will be true red
+        var R,G,B;                                                                  //The three parts of the color code                    
+
+        if(Number(roomColoring)){
+            //below setpoint
+                     if (RmTmp < (RmEffHtgSpt - HeatingDB)){
+                        R = 0;
+                        G = convertRange(RmTmp,lowTempBound,(RmEffHtgSpt-HeatingDB),0,255);
+                        B = 255;
+                     }
+
+            //good below
+                    else if (RmTmp < RmEffHtgSpt && RmTmp >= (RmEffHtgSpt - HeatingDB)){
+                        R = 0;
+                        G = 255;
+                        B = 68 - convertRange(RmTmp,(RmEffHtgSpt - HeatingDB),RmEffHtgSpt,0, 68);
+                     }
+            //In Deadband
+                    else if (RmTmp <= RmEffClgSpt && RmTmp >= RmEffHtgSpt){
+                        R = 0;
+                        G = 255;
+                        B = 0;	 
+                    
+                     }
+            //good above
+                    else if (RmTmp > RmEffClgSpt && RmTmp <= (RmEffClgSpt + CoolingDB)){
+                        R = convertRange(RmTmp,RmEffClgSpt,(RmEffClgSpt + CoolingDB),0, 119);
+                        G = 255;
+                        B = 0;
+                    }
+            //above
+                    else if (RmTmp > (RmEffClgSpt + CoolingDB)){
+                        R = 255;
+                        G = 80 - convertRange(RmTmp,(RmEffClgSpt + CoolingDB),highTempBound,0, 80);
+                        B =  0;
+                     }
+            //Join Colors
+                 var tileColor = "#" + pad(R.toString(16)) + pad(G.toString(16)) + pad(B.toString(16));
+                 if (RmTmp > -(TmpUnrThr) && RmTmp < TmpUnrThr){
+                    return tileColor;
+                    
+                 }
+                 else{
+                    return  "#FFFF00";
+                 }
+             } else{
+                return defaultTTColor;
+                
+             }
+}
+
+/*
+** Determines When to show the alarm bell in that is in every temptile component.
+** The alarm feature can be disabled with the ShowRoomAlarms exposed property in the load values.
+** Adding support for extended alarm states is possible by adding cases to the switching statement.
+** Input(s): 
+**      bindGroup       - A group of objects nested within a tempTile component
+**
+** Output(s):
+**      None
+**
+** Returns:
+**      String - "Visible" or "Hidden"
+*/
+
+getAlarmVis = function(bindGroup){
+        var alarmState = Number(bindGroup.getAttribute("GenAlm"))
+        if (showRmAlms){
+            switch (alarmState){
+                case 0: 
+                    return "Hidden";
+                    break;
+                case 1:
+                    return "Visible";
+                    break;
+            
+            }
+        }else{return "Hidden";}
+    
+    
+}
+         
+/*
+** New Tab Click Option. This function looks for a link in 
+** the component and launches it in a new tab. Refer to the
+** switch statement comments for defined click actions.  
+**
+** Full functionality requires that the defaultClick variable is defined on load
+**
+** Input(s): 
+**      inButton       - The mouse button that was pressed. Calling script must pass
+**
+** Output(s):
+**      None
+**
+** Returns:
+**      None
+**
+*/
+
+ttClick = function(inButton, target){
+        current = target;
+        link = current.getElementsByTagName("Link").item(0).getFullBindName();
+        var clickNum = parseInt(defaultClick);
+        var button = parseInt(inButton);
+        if(link != ""){
+            switch (clickNum){
+
+                case 1:
+                    /* All click events open the link in the 
+                    current WorkArea of the current Pane*/
+                    openHere(link);
+                    break;
+                case 2:
+                    /* All click events open the link in a
+                    new tab*/
+                    openTab(link);
+                    break;
+                case 3:     
+                    /* All click events open the link in a 
+                    floating window of the default size*/
+                    openFloat(link);
+                    break;
+                case 4: 
+                    /* All click events open the link in the 
+                    WorkArea of the parent Pane*/
+                    openParent(link);
+                    break;
+                case 5: 
+                    /* Left Click event opens the link in the
+                    ** WorkArea of the current Pane.
+                    ** Middle Click event opens the link in a 
+                    ** new tab
+                    ** Right Click has the no action defined*/
+                    switch (button){
+                        case 0:
+                            openHere(link);
+                            break;
+                        case 1:
+                            openTab(link);
+                            break;
+                        case 2:
+                            break;
+                        default:
+                            openHere(link);
+                            break;
+                    }
+                    break;
+                default:
+                    /*All click events open the link in the 
+                    current WorkArea of the current Pane*/
+                    openHere(link);
+                    break;
+            }
+
+            }
+	
+}
+
+/*
+**.This function launches the passed link in a new tab.  
+**
+** Input(s): 
+**      link       - The link that will be invoked
+**
+** Output(s):
+**      None
+**
+** Returns:
+**      None
+**
+*/
+		 
+openTab = function(link){
+    invoke(link, "OpenInNewWindow");
+}
+
+/*
+**.This function launches the passed link in a floating window. It is
+** configured with default parameters that should work for most monitors.
+**
+** Input(s): 
+**      link       - The link that will be invoked
+**
+** Output(s):
+**      None
+**
+** Returns:
+**      None
+**
+*/
+	
+
+openFloat = function(link){
+    invoke(link, "OpenInFloatingWindow Width=1200 | Height=700 | Top=100 | Left=300 | Showtoolbar=Yes");
+}
+
+/*
+**.This function launches the passed link in the parent container of the 
+** current workArea.
+**
+** Input(s): 
+**      link       - The link that will be invoked
+**
+** Output(s):
+**      None
+**
+** Returns:
+**      None
+**
+*/
+	
+openParent = function(link){
+    invoke(link,"OpenInParent");
+}
+
+/*
+**.This function performs the default click action on the passed link.
+**
+**
+** Input(s): 
+**      link       - The link that will be invoked
+**
+** Output(s):
+**      None
+**
+** Returns:
+**      None
+**
+*/
+	
+openHere = function(link){
+    invoke(link,"OpenInWorkArea");
+}
+
+
+/*
+**.TinyQueue is a priority queue that is used only during the polyLabel  
+** function execution. 
+**
+**      This function should not be modified. Documentation
+**      can be found here:
+**                           https://github.com/mourner/tinyqueue
+** 
+** Input(s): 
+**      data       - The initial data that will be loaded in the queue
+**      compare    - The function that determines how data is compared
+**
+** Output(s):
+**      None
+**
+** Returns:
+**      None
+**
+*/
+	
+function TinyQueue(data, compare) {
+    if (!(this instanceof TinyQueue)) return new TinyQueue(data, compare);
+
+    this.data = data || [];
+    this.length = this.data.length;
+    this.compare = compare || defaultCompare;
+
+    if (data) for (var i = Math.floor(this.length / 2); i >= 0; i--) this._down(i);
+}
+
+function defaultCompare(a, b) {
+    return a < b ? -1 : a > b ? 1 : 0;
+}
+
+TinyQueue.prototype = {
+
+    push: function (item) {
+        this.data.push(item);
+        this.length++;
+        this._up(this.length - 1);
+    },
+
+    pop: function () {
+        var top = this.data[0];
+        this.data[0] = this.data[this.length - 1];
+        this.length--;
+        this.data.pop();
+        this._down(0);
+        return top;
+    },
+
+    peek: function () {
+        return this.data[0];
+    },
+
+    _up: function (pos) {
+        var data = this.data,
+            compare = this.compare;
+
+        while (pos > 0) {
+            var parent = Math.floor((pos - 1) / 2);
+            if (compare(data[pos], data[parent]) < 0) {
+                swap(data, parent, pos);
+                pos = parent;
+
+            } else break;
+        }
+    },
+
+    _down: function (pos) {
+        var data = this.data,
+            compare = this.compare,
+            len = this.length;
+
+        while (true) {
+            var left = 2 * pos + 1,
+                right = left + 1,
+                min = pos;
+
+            if (left < len && compare(data[left], data[min]) < 0) min = left;
+            if (right < len && compare(data[right], data[min]) < 0) min = right;
+
+            if (min === pos) return;
+
+            swap(data, min, pos);
+            pos = min;
+        }
+    }
+};
+
+function swap(data, i, j) {
+    var tmp = data[i];
+    data[i] = data[j];
+    data[j] = tmp;
+}
+
+/*
+**.polyLabel is a function that finds the pole of inaccessibility, 
+** the most distant internal point from the polygon outline (not to
+** be confused with centroid). The implementation here is a slightly 
+** modified version of the publically available version linked below.
+**
+** This function depends on the presence of the TinyQueue function/prototype
+**
+**      This function should not be modified. Documentation
+**      can be found here:
+**                           https://github.com/mapbox/polylabel
+** 
+** Input(s): 
+**      polygon     - An array of points that define a polygon. The array construction can be seen in renderLabel().
+**      precision   - The level of precision that the algorithm.  If the function is too slow, reduce the precision.
+**      debug       - A debugging option that enables console logging of certain details.
+**
+** Output(s):
+**      None
+**
+** Returns:
+**      [bestCell.x, bestCell.y]    -The calculated point of the algorithm output as an array.
+**
+*/
+             
+polylabel = function (polygon, precision, debug) {
+    precision = precision || 1.0;
+
+    // find the bounding box of the outer ring
+    var minX, minY, maxX, maxY;
+    for (var i = 0; i < polygon[0].length; i++) {
+        var p = polygon[0][i];
+        if (!i || p[0] < minX) minX = p[0];
+        if (!i || p[1] < minY) minY = p[1];
+        if (!i || p[0] > maxX) maxX = p[0];
+        if (!i || p[1] > maxY) maxY = p[1];
+    }
+
+    var width = maxX - minX;
+    var height = maxY - minY;
+    var cellSize = Math.min(width, height);
+    var h = cellSize / 2;
+
+    // a priority queue of cells in order of their "potential" (max distance to polygon)
+    var cellQueue = new TinyQueue(null, compareMax);
+
+    if (cellSize === 0) return [minX, minY];
+
+    // cover polygon with initial cells
+    for (var x = minX; x < maxX; x += cellSize) {
+        for (var y = minY; y < maxY; y += cellSize) {
+            cellQueue.push(new Cell(x + h, y + h, h, polygon));
+        }
+    }
+
+    // take centroid as the first best guess
+    var bestCell = getCentroidCell(polygon);
+
+    // special case for rectangular polygons
+    var bboxCell = new Cell(minX + width / 2, minY + height / 2, 0, polygon);
+    if (bboxCell.d > bestCell.d) bestCell = bboxCell;
+
+    var numProbes = cellQueue.length;
+
+    while (cellQueue.length) {
+        // pick the most promising cell from the queue
+        var cell = cellQueue.pop();
+
+        // update the best cell if we found a better one
+        if (cell.d > bestCell.d) {
+            bestCell = cell;
+            if (debug) console.log('found best %d after %d probes', Math.round(1e4 * cell.d) / 1e4, numProbes);
+        }
+
+        // do not drill down further if there's no chance of a better solution
+        if (cell.max - bestCell.d <= precision) continue;
+
+        // split the cell into four cells
+        h = cell.h / 2;
+        cellQueue.push(new Cell(cell.x - h, cell.y - h, h, polygon));
+        cellQueue.push(new Cell(cell.x + h, cell.y - h, h, polygon));
+        cellQueue.push(new Cell(cell.x - h, cell.y + h, h, polygon));
+        cellQueue.push(new Cell(cell.x + h, cell.y + h, h, polygon));
+        numProbes += 4;
+    }
+
+    if (debug) {
+        console.log('num probes: ' + numProbes);
+        console.log('best distance: ' + bestCell.d);
+    }
+
+    return [bestCell.x, bestCell.y];
+}
+
+function compareMax(a, b) {
+    return b.max - a.max;
+}
+
+function Cell(x, y, h, polygon) {
+    this.x = x;                                     // cell center x
+    this.y = y;                                     // cell center y
+    this.h = h;                                     // half the cell size
+    this.d = pointToPolygonDist(x, y, polygon);     // distance from cell center to polygon
+    this.max = this.d + this.h * Math.SQRT2;        // max distance to polygon within a cell
+}
+
+/* signed distance from point to polygon outline (negative if point is outside)*/
+
+function pointToPolygonDist(x, y, polygon) {
+    var inside = false;
+    var minDistSq = Infinity;
+
+    for (var k = 0; k < polygon.length; k++) {
+        var ring = polygon[k];
+
+        for (var i = 0, len = ring.length, j = len - 1; i < len; j = i++) {
+            var a = ring[i];
+            var b = ring[j];
+
+            if ((a[1] > y !== b[1] > y) &&
+                (x < (b[0] - a[0]) * (y - a[1]) / (b[1] - a[1]) + a[0])) inside = !inside;
+
+            minDistSq = Math.min(minDistSq, getSegDistSq(x, y, a, b));
+        }
+    }
+
+    return (inside ? 1 : -1) * Math.sqrt(minDistSq);
+}
+
+/*
+** This function finds polygon centroid.
+**
+** Input(s): 
+**      polygon     - An array of points that define a polygon. 
+**
+** Output(s):
+**      None
+**
+** Returns:
+**      new Cell(x / area, y / area, 0, polygon);    -The calculated centroid of the polygon.
+**
+*/
+
+function getCentroidCell(polygon) {
+    var area = 0;
+    var x = 0;
+    var y = 0;
+    var points = polygon[0];
+
+    for (var i = 0, len = points.length, j = len - 1; i < len; j = i++) {
+        var a = points[i];
+        var b = points[j];
+        var f = a[0] * b[1] - b[0] * a[1];
+        x += (a[0] + b[0]) * f;
+        y += (a[1] + b[1]) * f;
+        area += f * 3;
+    }
+    if (area === 0) return new Cell(points[0][0], points[0][1], 0, polygon);
+    return new Cell(x / area, y / area, 0, polygon);
+}
+
+/* get squared distance from a point to a segment*/
+
+function getSegDistSq(px, py, a, b) {
+
+    var x = a[0];
+    var y = a[1];
+    var dx = b[0] - x;
+    var dy = b[1] - y;
+
+    if (dx !== 0 || dy !== 0) {
+
+        var t = ((px - x) * dx + (py - y) * dy) / (dx * dx + dy * dy);
+
+        if (t > 1) {
+            x = b[0];
+            y = b[1];
+
+        } else if (t > 0) {
+            x += dx * t;
+            y += dy * t;
+        }
+    }
+
+    dx = px - x;
+    dy = py - y;
+
+    return dx * dx + dy * dy;
+}
+
+/*
+** This function handles the resizing, positioning and positioning of the native room label object nested within a tempTile
+**
+*/
+
+renderLabel = function(shape,label){
+    
+    var shapeType = shape.getTagName();
+    var labelX;
+    var labelY;
+    
+    var textObj = label.getChildByName("labelText");
+    var textBack = label.getChildByName("labelBack");
+    var textBackWidth = textObj.getBoundingBox().get_Width() + 10;
+    var textBackHeight = textObj.getBoundingBox().get_Height() + 10;
+    
+    textBack.setAttribute("Height", textBackHeight);
+    textBack.setAttribute("Width", textBackWidth);
+    
+    if(shapeType == "Polygon"){
+        points = shape.getAttribute("Points");
+        pArray = [points.split(' ').map(function(e) {
+                return e.split(',').map(Number);
+            })];
+
+        var p = polylabel(pArray, 1.0);    
+        labelX = p[0]-(textBackWidth/2);
+        labelY = p[1]-(textBackHeight/2);
+    }
+    
+    if(shapeType == "Rectangle" || shapeType == "Ellipse"){
+        labelX = (shape.getAttribute("Width")/2) - (textBackWidth/2);
+        labelY = (shape.getAttribute("Height")/2) - (textBackHeight/2);
+    }
+    
+
+    label.setAttribute("Top",labelY);
+    label.setAttribute("Left",labelX);
+    if(textObj.getAttribute("Content") != ""){
+        label.setAttribute("Visibility", "Visible")}
+    }     
+
+/*
+**  Takes in a label and an alarm object and positions the alarm component above the label.
+**  Scales the size of the alarm proportional to the height of the label to accomodate different font sizes.
+*/
+renderAlarm = function(label, alarm){
+    //Pull in the Label size and position
+    var textBack = label;
+    var textBackWidth = textBack.getBoundingBox().get_Width();
+    var textBackHeight = textBack.getBoundingBox().get_Height();
+    var textBackTop =Number(textBack.getAttribute("Top"));
+    var textBackLeft = Number(textBack.getAttribute("Left"));
+    var sizeScale = 0.8;
+    
+    alarm.setAttribute("Height", textBackHeight*sizeScale);                                          //Make the height of the alarm proportion to the Height of the Label
+    alarm.setAttribute("Width", textBackHeight*sizeScale);                                           //Make the width of the alarm proportion to the Height of the Label
+    alarm.setAttribute("Left", (textBackLeft- (textBackHeight*sizeScale/2) + (textBackWidth/2)));    //Center the Alarm Component to the Label
+    
+    if (textBack.getAttribute("Visibility") == "Visible"){
+        alarm.setAttribute("Top", textBackTop - textBackHeight*sizeScale);}                           //Put the Alarm above the Label
+    else{
+        alarm.setAttribute("Top", textBackTop);}                                                      //Put the Alarm in the center of the tempTile
+}
+
+/*
+** This function takes in a target component and scales it by modifing the ContentHeight and ContentWidth proportionally.
+** Pass the function a fraction less than one to make the component larger, and the reciprocal of that fraction to restore the component to the original size
+*/
+
+componentScale = function(current, scale){
+    var oldWidth = current.getBoundingBox().get_Width();
+    var oldHeight = current.getBoundingBox().get_Height();
+    var oldTop = Number(current.getAttribute("Top"));
+    var oldLeft = Number(current.getAttribute("Left"));
+    current.setAttribute("ContentHeight", current.getAttribute("ContentHeight")*(scale))
+    current.setAttribute("ContentWidth", current.getAttribute("ContentWidth")*(scale))
+    var newWidth = current.getBoundingBox().get_Width();
+    var newHeight = current.getBoundingBox().get_Height();
+    if(newHeight< oldHeight){
+        var newLeft = oldLeft+(Math.abs(newWidth-oldWidth)/2);
+        var newTop = oldTop+(Math.abs(newHeight-oldHeight)/2);
+    }
+    else{
+    var newLeft = oldLeft-(Math.abs(newWidth-oldWidth)/2);
+    var newTop = oldTop-(Math.abs(newHeight-oldHeight)/2);
+    }
+    
+
+    current.setAttribute("Left", newLeft);
+    current.setAttribute("Top", newTop);
+
+}
+
+/* 
+** Loops through all Hovertargets and sets the default opacity and color settings
+** 	- This sets the opacity for the area to be highlighted to almost nothing by default
+**	- The "Type" Attribute allows exclusions for this setup for cases where you don't want
+**    one of the items to be transparent.
+*/
+
+ 
+ttLoad = function(evt)
+{
+
+/*
+** This function takes in a list of nodes and converts it into an array. 
+**
+** Input(s): 
+**      nodeList     - A structured list of document nodes. 
+**
+** Output(s):
+**      None
+**
+** Returns:
+**      arr         - An array of the objects that were in the passed node list
+**
+*/
+
+function convertNodes(nodelist){
+        var arr = [];
+        for(var i = nodelist.length; i--; arr.unshift(nodelist.item([i])));
+        return arr;
+    }  
+
+/*
+** This function filters an array on the condition that the desired attribute
+** is present in the objects contained in the array.  If the attribute is not 
+** present in the object,it is not added to the new array
+**
+** Input(s): 
+**      arr     - The array to be filtered.
+**      att     - The attribute for filtering
+**
+** Output(s):
+**      None
+**
+** Returns:
+**      newArr         - An array of the filtered objects 
+**
+*/
+    
+function filterAttr(arr, att ){       
+        var len = arr.length;
+        var attr = String(att);
+        var newArr = [];
+        for(var i = 0; i<len;i++){
+            var hasAttr = arr[i].hasAttribute(attr);
+            if(hasAttr == true){newArr.push(arr[i]);}
+            }
+         return newArr   
+        }    
+ /*
+** This function filters an array on the condition that the desired attribute
+** is present in the objects contained in the array and that the attribute is 
+** not an empty string.  If the attribute is not present in the object or the 
+** property is an empty string,it is not added to the new array
+**
+** Input(s): 
+**      arr     - The array to be filtered.
+**      att     - The attribute for filtering
+**
+** Output(s):
+**      None
+**
+** Returns:
+**      newArr         - An array of the filtered objects 
+**
+*/
+        
+ function filterNull(arr, att ){       
+        var len = arr.length;
+        var attr = String(att);
+        var newArr = [];
+        for(var i = 0; i<len;i++){
+            var hasAttr = arr[i].hasAttribute(attr);
+            if(hasAttr == true){
+                val = arr[i].getAttribute(attr);
+                if(val != ""){newArr.push(arr[i]);}
+            
+            }
+            }
+         return newArr   
+        }  
+               
+nodelist = evt.getCurrentTarget().getChildNodes();  // Get All the nodes in the document/layer
+
+ 
+list = convertNodes(nodelist)                       // Convert the  node list to an array
+list = filterAttr(list, "Type");                    // First pass filtering to eliminate objects with no actions
+
+
+/*Apply some default settings and properties to all objects that can be acted upon*/
+
+for (var i=0;i<list.length;i++)
+	{
+	current = list[i];				
+		
+	if(current.getAttribute("Type") == "Highlight")
+		{
+				current.getChildByName("Highlight").setAttribute("Opacity" , outOpacity);
+				//current.setAttribute("Fill" , hoverColor);
+				//current.setAttribute("Stroke" , "None");		
+		}
+		if(current.getAttribute("Type") == "tempTile")
+		{
+				current.getChildByName("back").setAttribute("Opacity" , ttOutOpacity);
+                if(current.getAttribute("hlGroup") != "" ){
+                    current.setAttribute("Id",i);                               //For DOM positon tracking
+                    current.getChildRecursive("Label").setAttribute("Id",i);    //For DOM positon tracking
+                    frontTTListPos = i;                                                  //For DOM position maximum
+                    }
+	}
+		if(current.getAttribute("Type") == "SummaryLine")
+		{
+				current.getChildByName("Highlight").setAttribute("Opacity",outOpacity);
+				current.getChildByName("Highlight").setAttribute("Fill",hoverColor);
+                current.getChildByName("Highlight").setAttribute("Stroke","None");
+		}
+
+	}
+    
+    list = filterNull(list, "hlGroup"); // Filter out the additional objects that do not belong to a group
+    
+}
+
+/* When the user mouses over a component with the same highlight Group, adjust the opacity
+ * and color of the defined targets
+ * 	- wentover set to one so that the change() function will increase the size of the component
+ */
+
+ttOver = function(evt){
+    current = evt.getTarget();
+    currentName = String(current.getAttribute("hlGroup"));
+    currentIndex = current.getParentNode().getAttribute("Id");
+	wentover = 1;
+    ttChange(currentIndex,currentName);
+}
+
+/* When the user mouses out of a component with the same highlight Group, adjust the opacity
+ * and color of the defined targets
+ * 	- wentover set to zero so that the change() function will reset the size of the component
+ */
+
+ttOut = function(evt){
+    current = evt.getTarget();
+    currentName = String(current.getAttribute("hlGroup"));
+    currentIndex = current.getParentNode().getAttribute("Id");
+	wentover = 0;
+    ttChange(currentIndex,currentName);
+}
+
+/* This function executes the changes that were defined in the over() and out() functions
+ */
+ 
+
+    
+ttChange = function(currentIndex,currentname){
+	for (var i=0;i<list.length;i++){
+		
+		var current = list[i];
+		var currentType = String(current.getAttribute("Type"));
+		var currentGroup = String(current.getAttribute("hlGroup"));
+		var isTargeted = 0;
+        if (currentIndex == Number(current.getAttribute("Id"))){isTargeted = 1;}
+        else{isTarget = 0;}
+       
+        /* Make sure the object at index "i" is the object that is desired and then 
+        ** decide what action to take based on what type of object is being changed.
+        **                  *Additional optimization may be possible*
+        */
+		if (currentGroup == currentname && currentname != ""){
+			switch (currentType){
+                default:
+                    break;
+                        
+                case	"tempTile":
+                    switch(wentover){
+                        case 0:
+                            var shape = current.getChildByName("back");
+                            var previousIndex = Number(current.getAttribute("Id"))
+                            var nextSibling = list[previousIndex + 1]
+                            var parent = current.getParentNode(); 
+                            var rmLabel = current.getChildRecursive("Label");
+                            var alarm = current.getChildRecursive("Alarm");
+                            shape.setAttribute("Stroke", "None")
+                            shape.setAttribute("Opacity", ttOutOpacity);
+                            if(labelPop && rmLabel != null){componentScale(rmLabel,5/3)}
+                            if(previousIndex+1<list.length && bringToFront){parent.insertBefore(current,nextSibling);}   //Move the current temptile to its original postion in the DOM
+                            if(labelPop && rmLabel != null && alarm != null){renderAlarm(rmLabel,alarm)}
+                            break;
+                        case 1:
+                            var shape = current.getChildByName("back");
+                            var parent = current.getParentNode(); 
+                            var rmLabel = current.getChildRecursive("Label");
+                            var alarm = current.getChildRecursive("Alarm");
+                            var objAfterLastTT = list[Math.min(frontTTListPos+1, (list.length-1))]
+                            shape.setAttribute("Opacity", ttOverOpacity);
+                            shape.setAttribute("StrokeWidth", "4");
+                            shape.setAttribute("StrokeDashArray", "4");
+                            shape.setAttribute("Stroke", "#FFFF00");
+                            if(isTargeted && bringToFront){parent.insertBefore(current,objAfterLastTT);}                                //Move the current temptile to the front if the mouse is over it
+                            if(labelPop && rmLabel != null){componentScale(rmLabel,3/5)}
+                            if(labelPop && rmLabel != null && alarm != null){renderAlarm(rmLabel,alarm)}
+                            break;
+                    }
+                    break;
+            
+            
+				case	"Highlight":
+                   switch(wentover){
+						case 0:
+                            current.getChildByName("Highlight").setAttribute("Opacity", outOpacity);
+							break;
+						case 1:
+                            current.getChildByName("Highlight").setAttribute("Opacity", overOpacity);
+							break;
+					}
+                    break;
+                    
+                case	"Boundary":
+                   switch(wentover){
+						case 0:
+                            current.getChildByName("Highlight").setAttribute("Opacity", outOpacity);
+							break;
+						case 1:
+                            current.getChildByName("Highlight").setAttribute("Opacity", ttOverOpacity);
+							break;
+					}
+                    break;    
+                    
+				case	"Component":
+					switch(wentover){
+						case 0:
+                            componentScale(current,4/3);
+							break;
+						case 1:
+                            componentScale(current,3/4);
+							break;
+					}
+                    break;
+
+				case	"RmLabel":
+					switch(wentover){ //LEGACY SUPPORT: USE "COMPONENT" OR THE INTEGRATED RmLabel INSTEAD
+						case 0:
+							OriSizeX = current.getChildByName("x").getAttribute("OriSize");
+							OriSizeY = current.getChildByName("y").getAttribute("OriSize");
+							
+							ScaleSizeX = current.getChildByName("x").getAttribute("ScaleSize");
+							ScaleSizeY = current.getChildByName("y").getAttribute("ScaleSize");
+							
+							current.getChildByName("x").setAttribute("From", ScaleSizeX);
+							current.getChildByName("y").setAttribute("From", ScaleSizeY);
+							current.getChildByName("x").setAttribute("To", OriSizeX);
+							current.getChildByName("y").setAttribute("To", OriSizeY);
+							
+							current.getChildByName("x").setAttribute("Animation", "Stop");
+							current.getChildByName("y").setAttribute("Animation", "Stop");
+							current.getChildByName("x").setAttribute("Animation", "Start");
+							current.getChildByName("y").setAttribute("Animation", "Start");
+							break;
+						
+						case 1:
+							OriSizeX = current.getChildByName("x").getAttribute("OriSize");
+							OriSizeY = current.getChildByName("y").getAttribute("OriSize");
+							
+							ScaleSizeX = current.getChildByName("x").getAttribute("ScaleSize");
+							ScaleSizeY = current.getChildByName("y").getAttribute("ScaleSize");
+							
+							current.getChildByName("x").setAttribute("From", OriSizeX);
+							current.getChildByName("y").setAttribute("From", OriSizeY);
+							current.getChildByName("x").setAttribute("To", ScaleSizeX);
+							current.getChildByName("y").setAttribute("To", ScaleSizeY);
+							
+							current.getChildByName("x").setAttribute("Animation", "Stop");
+							current.getChildByName("y").setAttribute("Animation", "Stop");
+							current.getChildByName("x").setAttribute("Animation", "Start");
+							current.getChildByName("y").setAttribute("Animation", "Start");
+							break;
+							
+					}
+					break;
+				case	"SummaryLine":
+                   switch(wentover){
+						case 0:
+                            current.getChildByName("Highlight").setAttribute("Opacity", outOpacity);
+                            current.getChildByName("Highlight").setAttribute("Stroke", "None");
+							break;
+						case 1:
+                            current.getChildByName("Highlight").setAttribute("Opacity", overOpacity);
+                            current.getChildByName("Highlight").setAttribute("Stroke", "#FFFFFF");
+							break;
+					}
+                
+                    
+                    
+			}
+		}
+	}
+}
+    
+//End of Load
+}]]></Script>
+</Tgml>

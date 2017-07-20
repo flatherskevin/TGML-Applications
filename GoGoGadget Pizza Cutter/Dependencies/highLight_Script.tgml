@@ -1,0 +1,16 @@
+<Tgml GridSize="10">
+    <Script Name="highLight" OnDocumentLoad="load" OnMouseOut="out" OnMouseOver="over"><![CDATA[function load(evt)
+{
+ttLoad(evt);
+}
+
+function over(evt)
+{
+ttOver(evt);
+}
+
+function out(evt)
+{
+ttOut(evt);
+}]]></Script>
+</Tgml>

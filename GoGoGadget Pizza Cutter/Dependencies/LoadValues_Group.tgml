@@ -1,0 +1,36 @@
+<Tgml GridSize="10">
+    <Group BringToFront="1" CoolingDbDef="1" CoolingSpan="10"
+        DefaultClickAction="2" DefaultTTColor="#C0C0C0" HeatingDbDef="1"
+        HeatingSpan="10" Id="" Name="LoadValues" RoomColoring="1"
+        ShowRoomAlarms="1" TmpDevDefault="2" TmpUnrThr="200"
+        hoverColor="#4ac0c0c0" labelPop="1" outOpacity="0.01"
+        overOpacity="1" ttOutOpacity="0.6" ttOverOpacity="1">
+        <Expose Description="Enables thermal coloring."
+            ExposedAttribute="RoomColoring" Name="RoomColoring"/>
+        <Expose
+            Description="Integer. Determines the range over which the color is scaled"
+            ExposedAttribute="CoolingSpan" Name="CoolingSpan"/>
+        <Expose
+            Description="Integer. Determines the range over which the color is scaled"
+            ExposedAttribute="HeatingSpan" Name="HeatingSpan"/>
+        <Expose Description="Default Heating Buffer. Integer"
+            ExposedAttribute="HeatingDbDef" Name="HeatingDbDef"/>
+        <Expose Description="Default Cooling Buffer. Integer"
+            ExposedAttribute="CoolingDbDef" Name="CoolingDbDef"/>
+        <Expose Description="Default Cooling Buffer. Integer"
+            ExposedAttribute="TmpUnrThr" Name="TmpUnreliableThreshold"/>
+        <Expose ExposedAttribute="BringToFront" Name="BringToFront"/>
+        <Expose ExposedAttribute="labelPop" Name="GrowingRmLabels"/>
+        <Expose
+            Description="Use to hide all room alarms in tempTiles.  0/1"
+            ExposedAttribute="ShowRoomAlarms" Name="ShowRoomAlarms"/>
+        <Expose Description="A document parameter. "
+            ExposedAttribute="DefaultClickAction" Name="DefaultClickAction"/>
+        <Expose ExposedAttribute="outOpacity" Name="outOpacity"/>
+        <Expose ExposedAttribute="overOpacity" Name="overOpacity"/>
+        <Expose ExposedAttribute="ttOverOpacity" Name="ttOverOpacity"/>
+        <Expose ExposedAttribute="ttOutOpacity" Name="ttOutOpacity"/>
+        <Expose ExposedAttribute="hoverColor" Name="hoverColor"/>
+        <Expose ExposedAttribute="DefaultTTColor" Name="DefaultTTColor"/>
+    </Group>
+</Tgml>

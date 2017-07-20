@@ -1,0 +1,27 @@
+<Tgml GridSize="10">
+    <Component Clip="False" ContentHeight="58.46" ContentWidth="530.0"
+        Height="58.46000000000001" Left="0.0" Name="Title" Top="0.0" Width="530.0">
+        <Text FontFamily="Georgia" FontSize="42" FontStyle="Normal"
+            FontWeight="Bold" HorizontalAlign="Left" Left="5.0"
+            Name="Text" Opacity="1.0" Stroke="#000000"
+            TextDecoration="None" Top="23.459999084472656"
+                VerticalAlign="Middle"><![CDATA[Floorplan Title]]><Expose
+                ExposedAttribute="Content" Name="Page Title"/>
+            <Expose ExposedAttribute="Stroke" Name="FontColor"/>
+        </Text>
+        <Line Name="Line" Opacity="1.0" Stroke="#000000"
+            StrokeDashArray="0.0" StrokeWidth="2.5" X1="0.0" X2="475"
+            Y1="50" Y2="50">
+            <Expose ExposedAttribute="Stroke" Name="FontColor"/>
+        </Line>
+        <Script OnDocumentLoad="onLoad"><![CDATA[function onLoad(evt){
+    var comp = evt.getCurrentTarget();
+    var text = comp.getChildByName("Text");
+    var line = comp.getChildByName("Line");
+    var textWidth = text.getBoundingBox().get_Width();
+    var x1 = line.getAttribute("X1");
+    x1 = parseFloat(x1);
+    line.setAttribute("X2", x1 + textWidth + 20);
+}]]></Script>
+    </Component>
+</Tgml>

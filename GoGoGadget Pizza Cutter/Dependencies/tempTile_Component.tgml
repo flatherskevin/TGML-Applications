@@ -1,0 +1,114 @@
+<?xml version="1.0"?>
+
+<!--[DocumentInformation]
+Created: 2017-05-31 14:47
+Modified: 2017-05-31 14:48
+-->
+<?tgml version="1.3"?><Tgml ComponentCounter="2" GridSize="10">
+    <Component Clip="False" ContentHeight="62.18" ContentWidth="95.93"
+        Height="62.17999999999995" Left="169.14999999999998" Name=""
+        Top="802.97" Type="tempTile" Visibility="Visible" Width="95.93" hlGroup="">
+        <Rectangle Fill="#C0C0C0" Height="0" Left="0" Name="back"
+            Opacity="1" RadiusX="0.0" RadiusY="0.0" Stroke="#FFFFFF"
+            StrokeDashArray="0.0" StrokeWidth="1.0" Top="0"
+            Visibility="Visible" Width="0"/>
+        <Expose
+            Description="How far out of spec RmTmp can be before coloring blue."
+            ExposedAttribute="HeatingDB" Name="HeatingDB"/>
+        <Expose
+            Description="How far out of spec RmTmp can be before coloring red. "
+            ExposedAttribute="CoolingDB" Name="CoolingDB"/>
+        <Expose ExposedAttribute="hlGroup" Name="hlGroup"/>
+        <Expose ExposedAttribute="Name" Name="hlGroup"/>
+        <Expose ExposedAttribute="Type" Name="Type"/>
+        <Script Name="clickCall" OnMouseClick="click"><![CDATA[function click(evt)
+{
+evt.preventDefault();
+var targ = evt.getCurrentTarget();
+var pressedButton = evt.getButton();
+ttClick(pressedButton,targ);
+
+}]]></Script>
+        <Group Id="TempTile" Name="BindGroup">
+            <Bind Attribute="RmTmp" Name="RmTmp.Value"/>
+            <Bind Attribute="RmEffClgSpt" Name="RmEffClgSpt.Value"/>
+            <Bind Attribute="RmEffHtgSpt" Name="RmEffHtgSpt.Value"/>
+            <Bind Attribute="GenAlm" Name="GenAlm.Value"/>
+            <Link Description="Link  to Unit Serving Room" Id="RmLink"
+                Name="Link" PreventDefault="True"/>
+            <Component Clip="False" ContentHeight="30.0"
+                ContentWidth="83.0" Height="30.0" Left="10.0"
+                Name="Label" RmLabel="" Top="10.0" Visibility="Hidden" Width="83.0">
+                <Rectangle Fill="#FFFFFF" Height="30.0" Left="0.0"
+                    Name="labelBack" Opacity="1.0" RadiusX="2.5"
+                    RadiusY="2.5" Stroke="#000000" StrokeDashArray="0.0"
+                    StrokeWidth="1.0" Top="0.0" Width="83.0"/>
+                <Text FontFamily="Georgia" FontSize="16"
+                    FontStyle="Normal" FontWeight="Bold"
+                    HorizontalAlign="Left" Left="5" Name="labelText"
+                    Opacity="1.0" Stroke="#404040" TextDecoration="None"
+                    Top="5" VerticalAlign="Top">
+                    <Expose ExposedAttribute="Content" Name="RmLabel"/>
+                    <Expose ExposedAttribute="FontSize" Name="RmLabelFontSize"/>
+                    <Expose ExposedAttribute="FontWeight" Name="RmLabelFontWeight"/>
+                    <Expose ExposedAttribute="FontFamily" Name="RmLabelFontFamily"/>
+                    <Expose ExposedAttribute="Stroke" Name="RmLabelFontColor"/>
+                </Text>
+                <Expose ExposedAttribute="RmLabel" Name="RmLabel"/>
+                <Translate Name="PositionAdjust">
+                    <Expose ExposedAttribute="X" Name="Label Adj X"/>
+                    <Expose ExposedAttribute="Y" Name="Label Adj Y"/>
+                </Translate>
+            </Component>
+            <Script Name="tempTileScript" OnDocumentLoad="load"
+                OnMouseClick="click" OnSignalChange="signal"><![CDATA[function signal(evt){
+	evt.preventDefault();
+	var comp = evt.getCurrentTarget().getParentNode();
+    var tempTile = comp.getChildByName("back");
+    var bindGroup = comp.getChildByName("BindGroup");
+	var alarm = bindGroup.getChildByName("Alarm")
+    tempTile.setAttribute("Fill", getColor(bindGroup));
+    alarm.setAttribute("Visibility", getAlarmVis(bindGroup));
+    
+}
+
+
+function click(evt)
+{
+evt.preventDefault();
+var targ = evt.getCurrentTarget();
+var pressedButton = evt.getButton();
+ttClick(pressedButton,targ);
+
+}
+
+function load(evt)
+{
+
+	var comp = evt.getCurrentTarget().getParentNode();
+    var tempTile = comp.getChildByName("back");
+    var label = comp.getChildByName("BindGroup").getChildByName("Label");
+    var alarm = comp.getChildByName("BindGroup").getChildByName("Alarm");
+    try {
+        styleLabel(label)
+    }
+    catch(err) {
+        
+    } 
+    finally {
+        renderLabel(tempTile, label);
+        renderAlarm(label, alarm);
+    }
+
+    
+}]]></Script>
+            <Component Clip="False" ContentHeight="15" ContentWidth="15"
+                Height="15.0" Left="10.0" Name="Alarm" Top="10.0"
+                Visibility="Hidden" Width="15.0">
+                <Curve Fill="#FF0000" Opacity="1.0"
+                    Points="0.002176651178161,11.975466253585182 0.33358902176974,11.708839400103614 0.996413762953011,11.175585693140533 1.290754728164757,10.628318685834529 2.082698580378178,9.15586057371479 2.295932738640204,7.104769791289812 2.625742412157706,5.427518743934343 2.975704718705174,4.268070611674091 3.212324384094018,3.089257572568158 3.964955871357233,2.14039539512305 4.367084200196018,1.633421705911871 4.868079999644806,1.571083912052814 5.448391876212554,1.165920955114416 5.895166867317812,0.613331518849179 5.878367195966462,-0.003534699616296 6.445062929429696,-0.002446342623443 6.970396916659524,-0.001437422166077 7.063960108194124,0.409057424051753 7.499354829997174,1.168988646153593 8.136901380603376,1.714933405399847 8.816410541443474,1.817117911544528 9.31699257082073,2.490867802975117 10.536566055191884,4.132332047524244 10.762221566853668,6.469029838666756 11.335804315574933,8.431876541872043 11.492644056841982,8.968594861528572 11.670193247640782,9.630057695500511 11.913482981035486,10.133521065290552 12.23639491868039,10.801754492175007 13.45312837120423,11.236015997125435 13.111135024155374,11.894687829568284 10.18903873938325,11.899270886060549 8.22051592419757,11.94445571542309 5.904705784938415,11.956329118052963 5.500036413115708,12.561570562342808 4.985910570040687,13.253185187691031 4.249577642243821,13.260027996118879 3.511563566130008,13.266886427609904 2.795770559448556,12.564238525681105 2.63790229591541,11.858319058694178"
+                    Stroke="#FFFFFF" StrokeDashArray="0.0" StrokeWidth="1.5"/>
+            </Component>
+        </Group>
+    </Component>
+</Tgml>
