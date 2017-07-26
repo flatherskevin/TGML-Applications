@@ -18,8 +18,11 @@ from Objects.OverBlock import OverBlock
 from Objects.SummaryLine import SummaryLine
 from Objects.SummaryLineHeaders import SummaryLineHeaders
 from Objects.Title import Title
+from Objects.Metadata import Metadata
 from GUI.FileBrowser import FileBrowser
 from config import config
+from SETTINGS import *
+import datetime
 
 class TGML:
 
@@ -105,6 +108,14 @@ class TGML:
 	def write_to_file(self, obj):
 		obj.write_to_file(etree.tostring(self.tgml))
 
+	def add_metadata(self):
+		metadata = Metadata('Metadata', input_type='blank')
+		metadata.properties['Name'] = 'Creation Info'
+		date = datetime.datetime.now()
+		metadata.properties['Value'] = 'Created on {date} using {name} - {version}'.format(name=NAME, version=VERSION, date=date.strftime('%B %d, %Y'))
+		metadata.compile()
+		self.tgml.append(metadata.element)
+
 	def go_go_gadget(self, file_path, obj):
 		self.prepare_TGML(file_path)
 		self.create_tempTile()
@@ -114,6 +125,7 @@ class TGML:
 		self.create_Title()
 		self.create_highLight()
 		self.create_SummaryLine()
+		self.add_metadata()
 		self.set_properties()
 		self.write_to_file(obj)
 

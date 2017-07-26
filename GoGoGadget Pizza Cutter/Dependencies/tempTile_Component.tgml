@@ -2,7 +2,7 @@
 
 <!--[DocumentInformation]
 Created: 2017-05-31 14:47
-Modified: 2017-05-31 14:48
+Modified: 2017-07-26 08:22
 -->
 <?tgml version="1.3"?><Tgml ComponentCounter="2" GridSize="10">
     <Component Clip="False" ContentHeight="62.18" ContentWidth="95.93"
@@ -61,7 +61,7 @@ ttClick(pressedButton,targ);
                 </Translate>
             </Component>
             <Script Name="tempTileScript" OnDocumentLoad="load"
-                OnMouseClick="click" OnSignalChange="signal"><![CDATA[function signal(evt){
+                OnMouseClick="" OnSignalChange="signal"><![CDATA[function signal(evt){
 	evt.preventDefault();
 	var comp = evt.getCurrentTarget().getParentNode();
     var tempTile = comp.getChildByName("back");
@@ -70,16 +70,6 @@ ttClick(pressedButton,targ);
     tempTile.setAttribute("Fill", getColor(bindGroup));
     alarm.setAttribute("Visibility", getAlarmVis(bindGroup));
     
-}
-
-
-function click(evt)
-{
-evt.preventDefault();
-var targ = evt.getCurrentTarget();
-var pressedButton = evt.getButton();
-ttClick(pressedButton,targ);
-
 }
 
 function load(evt)

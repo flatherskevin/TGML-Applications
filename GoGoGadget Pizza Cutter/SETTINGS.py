@@ -1,6 +1,6 @@
 #Settings file for easy changing of paths and static values
 NAME = 'GoGoGadget Pizza Cutter'
-VERSION = '3.4'
+VERSION = '3.5'
 
 TempTileGlobal_Script_PATH = 'Dependencies/TempTileGlobal_Script.tgml'
 
